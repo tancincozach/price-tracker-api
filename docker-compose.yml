@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  price_tracker_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: price_tracker_api
+    command: uvicorn app.asgi:application --host 0.0.0.0 --port 8000 --reload  # Change to Uvicorn command
+    ports:
+      - "8001:8000"  # Expose container's port 8000 to host port 8001
+    depends_on:
+      - db
+    environment:
+      - DJANGO_SETTINGS_MODULE=app.settings
+      - POSTGRES_DB=price_tracker_db
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=s3cr3t
+      - POSTGRES_HOST=db
+    networks:
+      - web_data_scrape_network
+    volumes:
+      - .:/app
+      - staticfiles:/app/staticfiles
+      - media:/app/media
+
+  db:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: price_tracker_db
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: s3cr3t
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - web_data_scrape_network
+
+networks:
+  web_data_scrape_network:
+    external: true  # Declare this network as external
+
+volumes:
+  postgres_data:
+  staticfiles:
+  media:
