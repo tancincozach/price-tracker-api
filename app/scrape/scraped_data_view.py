@@ -107,7 +107,11 @@ class ScrapedDataViewSet(viewsets.ViewSet):
 
         content_selectors = await sync_to_async(self.get_content_selectors)(website)
         pending_pages = await sync_to_async(
-            lambda: list(Page.objects.filter(web=website, status='pending', deleted_at__isnull=True))
+            lambda: list(Page.objects.filter(
+                web=website,
+                status='pending',
+                deleted_at__isnull=True
+            ))  # Limit to 2 records
         )()
 
         if not pending_pages:

@@ -14,10 +14,10 @@ class ScrapedDataService:
             field_name = item.get('field_name', "N/A")
             field_value = item.get('field_value', "N/A")
             field_value_meta = item.get('field_value_meta', {})
-
+           
             try:
-                # Serialize field_value_meta to a JSON string
-                field_value_meta_json = json.dumps(field_value_meta)
+                field_value_meta_json = json.dumps(field_value_meta, ensure_ascii=False)
+                self.logger_service.info(field_value_meta_json)
             except (TypeError, ValueError) as e:
                 self.logger_service.error(f"Error serializing field_value_meta for {field_name}: {e}")
                 field_value_meta_json = "{}"
@@ -28,7 +28,7 @@ class ScrapedDataService:
                     field_name=field_name,
                     defaults={
                         'field_value': field_value,
-                        'field_value_meta': field_value_meta_json  # Ensure it's a JSON string
+                        'field_value_meta': field_value_meta_json
                     }
                 )
                 if created:

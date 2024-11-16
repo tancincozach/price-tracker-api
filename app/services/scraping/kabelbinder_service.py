@@ -167,42 +167,79 @@ class KabelBinderService(AbstractWebScraper):
         :param response: The response data to parse.
         :return: A dictionary containing parsed product information.
         """
-        if not (response and isinstance(response, dict) and 'scraped_data' in response):
+        # Check if the response is valid
+        if not response or not isinstance(response, dict) or 'scraped_data' not in response:
             self.logger_service.warning(f"Invalid or empty response for URL: {url}.")
             return {}
 
         parsed_data = response['scraped_data']
-        product_name = None
-        main_price = None
-        price_table = []
-
+        product_name, main_price, price_table = None, None, []
+        
         for item in parsed_data:
             item_classes = item.get('attributes', {}).get('class', [])
-            
-            if item['tag'] == 'h1' and any(cls in item_classes for cls in classes['product_title']):
-                product_name = item.get('text')
-            elif item['tag'] == 'div' and any(cls in item_classes for cls in classes['price']):
-                main_price = item.get('text')
-            elif item['tag'] == 'div' and any(cls in item_classes for cls in classes['bulk_prices']):
-                price_table.extend(self.parse_price_table(url, item.get('children', [])))
 
+            if item['tag'] == 'h1' and any(cls in item_classes for cls in classes[:2]):
+                product_name = item.get('text')
+                
+            elif item['tag'] == 'div' and any(cls in item_classes for cls in classes[2:3]):
+                main_price = item.get('text')
+
+            elif item['tag'] == 'div' and any(cls in item_classes for cls in classes[3:]):
+                price_table.extend(self.parse_price_table(item.get('children', [])))
+                
         if product_name and main_price and price_table:
             self.logger_service.info(f"Found bulk prices for product: {product_name}")
-            return {"product": product_name, "price": main_price, "price_table": price_table}
+            return {
+                "product": product_name,
+                "price": self.clean_price(main_price),
+                "price_table": [self.clean_price(p) for p in price_table]
+            }
 
         self.logger_service.warning(f"No bulk prices found for product: {product_name}.")
         return {}
 
-    def parse_price_table(self, url: str, children: list) -> list:
+    def parse_price_table(self, children: list) -> list:
         """
-        :param url: The URL of the page containing the price table.
         :param children: The child elements containing price data.
-        :return: A list of dictionaries representing the parsed prices.
+        :return: A list of parsed prices.
         """
         prices = []
+
+        if not children:
+            self.logger_service.warning("No children found to parse.")
+            return prices
+
         for child in children:
-            if child.get('tag') == 'div' and 'bulk' in child.get('attributes', {}).get('class', []):
-                price = child.get('text')
-                if price:
-                    prices.append(price)
+            child_classes = child.get('attributes', {}).get('class', [])
+
+            if 'table' in child_classes:
+                rows = child.get('children', [])
+                
+                for row in rows:
+                    if row.get('tag') == 'tr': 
+                        cells = row.get('children', [])
+                        for cell in cells:
+                            if cell.get('tag') == 'td':
+                                
+                                span = next((s for s in cell.get('children', []) 
+                                             if s.get('tag') == 'span' and 'bulk-price' in s.get('attributes', {}).get('class', [])), None)
+                                if span:
+                                    price = span.get('text')
+                                    if price:
+                                        prices.append(price)
+
         return prices
+
+    def clean_price(self, price: str) -> str:
+        """
+        Cleans the price string by removing any unwanted characters and ensuring the Euro symbol is correct.
+        :param price: The price string to clean.
+        :return: The cleaned price string with the Euro sign.
+        """
+        if price:
+            price = price.replace('*', '').strip()
+            price = price.replace("\u20ac", "€")
+            price = price.replace(",", ".") 
+
+        return price
+

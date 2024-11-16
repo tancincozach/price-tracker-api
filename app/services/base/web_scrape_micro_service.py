@@ -63,7 +63,6 @@ class WebScrapeMicroService:
                 fetched_data = await self.circuit_breaker.call(self._fetch_data, session, url_to_scrape, data)
 
                 self.logger_service.info(f"Successfully fetched data from {url_to_scrape}")
-                self.logger_service.info(f"Response: {fetched_data}")
                 return fetched_data
 
         except pybreaker.CircuitBreakerError:

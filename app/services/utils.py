@@ -24,17 +24,14 @@ def success_response(data, code):
     """Return a success response with a success indicator."""
     formatted_data = format_response(data=data)
     
-    # Check if the formatted data is a list
-    if isinstance(formatted_data, list):
-        response_data = {
-            'success': 1,
-            'data': formatted_data  # Wrap the list in a 'data' key
-        }
-    else:
-        response_data = {
-            'success': 1,
-            **formatted_data  # Directly unpack if it's not a list
-        }
+    # Ensure formatted_data is a dictionary or convert it to one
+    if not isinstance(formatted_data, dict):
+        formatted_data = {"data": formatted_data}  # Wrap it in a dictionary if not already one
+    
+    response_data = {
+        'success': 1,
+        **formatted_data  # Safely unpack
+    }
 
     return Response(response_data, status=code)
 
