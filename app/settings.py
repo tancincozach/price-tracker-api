@@ -15,13 +15,12 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your-default-secret-key')
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # Application definition
 INSTALLED_APPS = [
@@ -72,12 +71,12 @@ WSGI_APPLICATION = 'app.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',  # Use the PostgreSQL backend
-        'NAME': os.environ.get('POSTGRES_DB', 'price_tracker_db'),  # Database name
-        'USER': os.environ.get('POSTGRES_USER', 'root'),  # Database user
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 's3cr3t'),  # Database password
-        'HOST': os.environ.get('POSTGRES_HOST', 'db'),  # Database host
-        'PORT': os.environ.get('POSTGRES_PORT', '5432'),  # Database port
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('POSTGRES_DB'),
+        'USER': os.environ.get('POSTGRES_USER'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
+        'HOST': os.environ.get('POSTGRES_HOST'),
+        'PORT': os.environ.get('POSTGRES_PORT'),
     }
 }
 
@@ -150,4 +149,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Microservice settings
 SCRAPING_MICROSERVICE_BASE_URL = os.getenv('SCRAPING_MICROSERVICE_BASE_URL')
-SCRAPING_MICROSERVICE_API_KEY = os.getenv('SCRAPING_MICROSERVICE_API_KEY')
+SCRAPING_MICROSERVICE_CLIENT_ID = os.getenv('SCRAPING_MICROSERVICE_CLIENT_ID')
+SCRAPING_MICROSERVICE_CLIENT_SECRET = os.getenv('SCRAPING_MICROSERVICE_CLIENT_SECRET')

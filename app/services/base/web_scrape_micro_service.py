@@ -11,7 +11,8 @@ class WebScrapeMicroService:
         self.microservice_url = f"{settings.SCRAPING_MICROSERVICE_BASE_URL}/scrape/data/"
         self.headers = {
             "Content-Type": "application/json",
-            # "Authorization": f"Bearer {settings.SCRAPING_API_KEY}" # @TODO: Will add the api key created from the microservice
+            "X-Client-ID": settings.SCRAPING_MICROSERVICE_CLIENT_ID,
+            "X-Client-Secret": settings.SCRAPING_MICROSERVICE_CLIENT_SECRET,
         }
         self.timeout = aiohttp.ClientTimeout(total=3600)  # 60-second timeout for requests
         self.logger_service = LoggerService(__name__)

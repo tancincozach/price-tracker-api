@@ -26,7 +26,7 @@ services:
 
   db:
     image: postgres:latest
-    container_name: postgres_db
+    container_name: postgres_price_tracker_db
     environment:
       POSTGRES_DB: price_tracker_db
       POSTGRES_USER: root
