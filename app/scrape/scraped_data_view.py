@@ -111,7 +111,7 @@ class ScrapedDataViewSet(viewsets.ViewSet):
                 web=website,
                 status='pending',
                 deleted_at__isnull=True
-            ))  # Limit to 2 records
+            ))
         )()
 
         if not pending_pages:
@@ -140,20 +140,36 @@ class ScrapedDataViewSet(viewsets.ViewSet):
 
     async def _process_scraped_data_batch(self, pending_pages, data_batch, start):
         """
-        :param pending_pages: A list of Page instances to update with scraped data.
-        :param data_batch: A batch of data corresponding to the pages.
-        :param start: The starting index of the current batch.
+        Process a batch of scraped data and update the corresponding pages.
         """
-        for page, resp in zip(pending_pages[start:start + 25], data_batch):
-            if resp:
-                scraped_data_items = [{
-                    "field_name": resp.get("product", "N/A"),
-                    "field_value": resp.get("price", "N/A"),
-                    "field_value_meta": {"prices": resp.get("price_table", [])}
-                }]
-                self.logger_service.info(f"data: {scraped_data_items}")
-                await sync_to_async(self.scraped_data_service.createScrapedData)(page, scraped_data_items)
-                self.logger_service.info(f"Processed data for page: {page.url}")
+        updates = []
+        failed_pages = []
+        
+        for page, resp in zip(pending_pages[start:start + len(data_batch)], data_batch):
+            try:
+                if resp:
+                    scraped_data_items = [{
+                        "field_name": resp.get("product", "N/A"),
+                        "field_value": resp.get("price", "N/A"),
+                        "field_value_meta": {"prices": resp.get("price_table", [])}
+                    }]
+                    await sync_to_async(self.scraped_data_service.createScrapedData)(page, scraped_data_items)
+                    page.status = 'scraped'
+                else:
+                    page.status = 'failed'
+                updates.append(page)
+            except Exception as e:
+                self.logger_service.error(f"Error processing page {page.url}: {str(e)}")
+                failed_pages.append(page.url)
+
+        # Bulk update page statuses
+        if updates:
+            await sync_to_async(Page.objects.bulk_update)(updates, ['status'])
+
+        if failed_pages:
+            self.logger_service.warning(f"Failed to process the following pages: {failed_pages}")
+
+        self.logger_service.info(f"Processed batch starting at {start} with {len(updates)} pages updated.")
 
     def get_content_selectors(self, website: Website):
         """

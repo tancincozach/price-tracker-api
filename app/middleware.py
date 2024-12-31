@@ -1,6 +1,6 @@
 from django.utils.deprecation import MiddlewareMixin
-from .services.authentication_service import AuthenticationService
-from .services.logger_service import LoggerService
+from app.services.auth.authentication_service import AuthenticationService
+from app.services.base.logger_service import LoggerService
 
 class DynamicRouteGuardMiddleware(MiddlewareMixin):
     def __init__(self, get_response):
